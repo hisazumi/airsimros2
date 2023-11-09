@@ -1,0 +1,11 @@
+version: '3'
+services:
+  arducopter:
+    build: .
+    container_name: arducopter
+    restart: always
+    volumes:
+      - .:/rc
+    ports:
+      - "5760:5760"
+      - "9003:9003/udp"
