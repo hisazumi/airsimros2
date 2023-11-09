@@ -1,6 +1,6 @@
 # ------------ ベースとなるイメージファイル
-# FROM nvidia/cuda:11.7.0-devel-ubuntu22.04
-FROM --platform=linux/amd64 ubuntu:22.04
+# Assume that the platform is linux/amd64. aarch64/arm64 may not work.
+FROM osrf/ros:humble-desktop-full
 
 # ------------ 環境設定
 ENV DISPLAY host.docker.internal:0.0
@@ -23,29 +23,41 @@ RUN apt-get update && apt-get upgrade -y \
         git \
 # matplotlibなどでの描画GUIに必要
         python3-tk \
-# ------------ BridgePoint
+# ArduPilot related
+	sudo lsb-release \
+# ROS2
+        curl gnupg \        
+# BridgePoint
         openjdk-11-jdk openjdk-17-jdk unzip
-RUN bash -c unzip /workspaces/rc/org.xtuml.bp.product-linux.gtk.$(dpkg --print-architecture).*.zip
+
+#RUN bash -c unzip /workspaces/rc/org.xtuml.bp.product-linux.gtk.$(dpkg --print-architecture).*.zip
 
 # ------------ ROS2のセットアップ
-COPY setup.sh /root/
-RUN bash ~/setup.sh
+# COPY setup.sh /root/
+# RUN bash ~/setup.sh
+RUN apt-get install -y \
+        ros-humble-tf2-sensor-msgs \
+        ros-humble-tf2-geometry-msgs \
+        ros-humble-mavros \
+        ros-humble-mavros-msgs \
+        ros-humble-geographic-msgs \
+        libyaml-cpp-dev
 
 # ------------ Ardupilotのセットアップ
-RUN apt-get install -y sudo lsb-release
+RUN echo 'export PATH=$HOME/.local/bin:$PATH' >> $HOME/.bashrc
 RUN git clone https://github.com/ArduPilot/ardupilot.git ardupilot \
         && cd ardupilot && git submodule update --init --recursive
 
 RUN USER=nobody EUID=nobody ardupilot/Tools/environment_install/install-prereqs-ubuntu.sh -y -q
-RUN cd ardupilot \
-        && ./waf distclean \
-        && ./waf configure --board sitl \
-        && ./waf copter \
-        && ./waf rover \
-        && ./waf plane \
-        && ./waf sub
 
-RUN echo 'export PATH=$HOME/.local/bin:$PATH' >> $HOME/.bashrc
+#RUN cd ardupilot \
+#        && ./waf distclean \
+#        && ./waf configure --board sitl \
+#        && ./waf copter \
+#        && ./waf rover \
+#        && ./waf plane \
+#        && ./waf sub
+
 
 EXPOSE 5760/tcp
 EXPOSE 9003/udp

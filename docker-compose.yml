@@ -9,3 +9,5 @@ services:
     ports:
       - "5760:5760"
       - "9003:9003/udp"
+    stdin_open: true
+    tty: true
